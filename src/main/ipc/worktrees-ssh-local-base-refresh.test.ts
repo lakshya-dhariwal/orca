@@ -190,6 +190,86 @@ describe('registerWorktreeHandlers', () => {
     )
   })
 
+  it('does not warn for SSH local base refresh when local main is current but its checkout is dirty', async () => {
+    const repo = {
+      id: 'repo-ssh',
+      path: '/remote/repo',
+      displayName: 'ssh',
+      badgeColor: '#000',
+      addedAt: 0,
+      connectionId: 'conn-1',
+      worktreeBaseRef: 'origin/main'
+    }
+    const provider = {
+      exec: vi.fn().mockImplementation(async (args: string[]) => {
+        if (args[0] === 'remote') {
+          return { stdout: 'origin\n', stderr: '' }
+        }
+        if (args[0] === 'show-ref') {
+          throw Object.assign(new Error('missing remote ref'), { code: 1 })
+        }
+        if (args[0] === 'merge-base') {
+          return { stdout: '', stderr: '' }
+        }
+        if (args[0] === 'log') {
+          return { stdout: '', stderr: '' }
+        }
+        return { stdout: '', stderr: '' }
+      }),
+      fetchRemoteTrackingRef: vi.fn().mockResolvedValue(undefined),
+      addWorktree: vi.fn().mockResolvedValue(undefined),
+      listWorktrees: vi.fn(),
+      worktreeIsClean: vi.fn().mockResolvedValue({ clean: false, stdout: ' M package.json\n' }),
+      refreshLocalBaseRefForWorktreeCreate: vi.fn().mockResolvedValue(undefined)
+    }
+    provider.listWorktrees.mockImplementation(async () =>
+      provider.addWorktree.mock.calls.length > 0
+        ? [
+            {
+              path: '/remote/repo-improve-dashboard',
+              head: 'abc123',
+              branch: 'refs/heads/improve-dashboard',
+              isBare: false,
+              isMainWorktree: false
+            }
+          ]
+        : [
+            {
+              path: '/remote/repo',
+              head: 'base123',
+              branch: 'refs/heads/main',
+              isBare: false,
+              isMainWorktree: true
+            }
+          ]
+    )
+    const mux = {
+      request: vi.fn().mockResolvedValue(undefined),
+      notify: vi.fn()
+    }
+    store.getSettings.mockReturnValue({
+      branchPrefix: 'none',
+      nestWorkspaces: false,
+      refreshLocalBaseRefOnWorktreeCreate: true,
+      workspaceDir: '/workspace'
+    })
+    store.getRepos.mockReturnValue([repo])
+    store.getRepo.mockReturnValue(repo)
+    getSshGitProviderMock.mockReturnValue(provider)
+    getActiveMultiplexerMock.mockReturnValue(mux)
+    store.setWorktreeMeta.mockImplementation((_worktreeId, meta) => meta)
+
+    const result = (await handlers['worktrees:create'](null, {
+      repoId: 'repo-ssh',
+      name: 'improve-dashboard'
+    })) as CreateWorktreeResult
+
+    // Current local main: no owner inspection, no refresh RPC, no warning result.
+    expect(provider.worktreeIsClean).not.toHaveBeenCalled()
+    expect(provider.refreshLocalBaseRefForWorktreeCreate).not.toHaveBeenCalled()
+    expect(result.localBaseRefRefresh).toBeUndefined()
+  })
+
   it('refreshes SSH local base through the narrow relay RPC when the setting is on', async () => {
     const repo = {
       id: 'repo-ssh',

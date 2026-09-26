@@ -1661,10 +1661,15 @@ async function refreshLocalBaseRefForRemoteWorktreeCreate(
   const evaluation = await evaluateRemoteLocalBaseRefRefreshability(
     provider,
     repoPath,
-    remoteTrackingBase
+    remoteTrackingBase,
+    // Why: a current local ref has nothing to refresh, so skip owner inspection; a dirty checkout must not raise a false "not refreshed" warning.
+    (behind) => behind > 0
   )
   if (!evaluation.refreshable) {
     return evaluation.result
+  }
+  if (evaluation.behind === 0) {
+    return undefined
   }
 
   const resultBase = { baseRef: evaluation.baseRef, localBranch: evaluation.localBranch }
