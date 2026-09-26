@@ -98,20 +98,9 @@
         "issue-command read and write",
         "hosted-review own-store host resolution"
       ],
-      "platforms": [
-        "macos",
-        "linux",
-        "windows"
-      ],
-      "providers": [
-        "local",
-        "ssh",
-        "wsl",
-        "remote-runtime"
-      ],
-      "coveredPlatforms": [
-        "macos"
-      ],
+      "platforms": ["macos", "linux", "windows"],
+      "providers": ["local", "ssh", "wsl", "remote-runtime"],
+      "coveredPlatforms": ["macos"],
       "coveredProviders": [],
       "coverageNotes": "Actual hydration and authoritative desktop owner selection with mocked filesystem, Git, inspection and provider boundaries; synthetic local/SSH/runtime rows. No physical provider or native platform certification.",
       "motivatingLinks": [
@@ -122,9 +111,7 @@
       "commands": [
         "ORCA_BACKGROUND_LAUNCH=1 pnpm exec vitest run --config config/vitest.config.ts src/main/ipc/hooks/worktree-hook-execution-host.test.ts"
       ],
-      "testFiles": [
-        "src/main/ipc/hooks/worktree-hook-execution-host.test.ts"
-      ],
+      "testFiles": ["src/main/ipc/hooks/worktree-hook-execution-host.test.ts"],
       "assertionRefs": [
         {
           "file": "src/main/ipc/hooks/worktree-hook-execution-host.test.ts",
